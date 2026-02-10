@@ -160,12 +160,26 @@ export const MechanicProvider = ({ children }) => {
             setManualLng(lng.toString());
             setManualLocation(true);
             fetchAddress(lat, lng);
-        } else if (navigator.geolocation && !location.lat) {
-            navigator.geolocation.getCurrentPosition((position) => {
-                const { latitude, longitude } = position.coords;
-                setLocation({ lat: latitude, lng: longitude });
-                fetchAddress(latitude, longitude);
-            });
+        } else if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+                    setLocation({ lat: latitude, lng: longitude });
+                    fetchAddress(latitude, longitude);
+                    console.log("Mechanic location obtained:", latitude, longitude);
+                },
+                (err) => {
+                    console.warn("Geolocation error:", err.message);
+                    // Fallback to a default location
+                    setLocation({ lat: 40.7128, lng: -74.0060 });
+                    setAddress("Default Location (NYC)");
+                    addToast("Location access denied. Please set your location manually.", "error");
+                }
+            );
+        } else {
+            console.warn("Geolocation not supported");
+            setLocation({ lat: 40.7128, lng: -74.0060 });
+            setAddress("Default Location");
         }
     }, [user]);
 

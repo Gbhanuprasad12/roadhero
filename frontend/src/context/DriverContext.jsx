@@ -80,9 +80,20 @@ export const DriverProvider = ({ children }) => {
     useEffect(() => {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
-                (pos) => setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-                (err) => console.error(err)
+                (pos) => {
+                    setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+                    console.log("Driver location obtained:", pos.coords.latitude, pos.coords.longitude);
+                },
+                (err) => {
+                    console.warn("Geolocation error:", err.message);
+                    // Fallback to a default location (e.g., New York City)
+                    setLocation({ lat: 40.7128, lng: -74.0060 });
+                    addToast("Location access denied. Using default location.", "error");
+                }
             );
+        } else {
+            console.warn("Geolocation not supported");
+            setLocation({ lat: 40.7128, lng: -74.0060 });
         }
         checkActiveSession();
         fetchHistory();

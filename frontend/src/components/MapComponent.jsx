@@ -1,13 +1,10 @@
 import React, { useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
-// Fix: Leaflet Routing Machine relies on window.L
-if (typeof window !== 'undefined') {
-    window.L = L;
-}
-import 'leaflet-routing-machine';
-import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
+import { MapPin } from 'lucide-react';
+
+// Use global L from CDN
+const L = window.L;
 
 // Fix for default marker icon in React Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -87,7 +84,7 @@ function RoutingMachine({ start, end }) {
                 }
             }
         };
-    }, [map, start ? start[0] : null, start ? start[1] : null, end ? end[0] : null, end ? end[1] : null]); // Safely access coordinates
+    }, [map, start ? start[0] : null, start ? start[1] : null, end ? end[0] : null, end ? end[1] : null]);
 
     return null;
 }
@@ -113,29 +110,40 @@ const MapComponent = ({ center, markers = [], zoom = 13, showRoute = false, rout
     // Safety guard for center
     const safeCenter = Array.isArray(center) && center.length === 2 && !isNaN(center[0]) && !isNaN(center[1])
         ? center
-        : [51.505, -0.09];
+        : [40.7128, -74.0060]; // Default to NYC
+
+    // Validate markers
+    const safeMarkers = markers.filter(m =>
+        m &&
+        Array.isArray(m.position) &&
+        m.position.length === 2 &&
+        !isNaN(m.position[0]) &&
+        !isNaN(m.position[1])
+    );
 
     try {
         return (
-            <MapContainer center={safeCenter} zoom={zoom} style={{ height: '100%', width: '100%', borderRadius: '16px' }}>
+            <MapContainer
+                center={safeCenter}
+                zoom={zoom}
+                style={{ height: '100%', width: '100%', borderRadius: '16px' }}
+                key={`${safeCenter[0]}-${safeCenter[1]}`}
+            >
                 <ChangeView center={safeCenter} zoom={zoom} />
                 {onMapClick && <LocationPicker onLocationPicked={onMapClick} />}
                 <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
-                {markers.map((marker, idx) => {
-                    if (!marker?.position || isNaN(marker.position[0]) || isNaN(marker.position[1])) return null;
-                    return (
-                        <Marker key={idx} position={marker.position} icon={createCustomIcon(marker.type)}>
-                            <Popup>
-                                <div style={{ padding: '4px' }}>
-                                    {marker.content}
-                                </div>
-                            </Popup>
-                        </Marker>
-                    );
-                })}
+                {safeMarkers.map((marker, idx) => (
+                    <Marker key={idx} position={marker.position} icon={createCustomIcon(marker.type)}>
+                        <Popup>
+                            <div style={{ padding: '4px' }}>
+                                {marker.content}
+                            </div>
+                        </Popup>
+                    </Marker>
+                ))}
                 {showRoute && routeStart && routeEnd && (
                     <RoutingMachine start={routeStart} end={routeEnd} />
                 )}
@@ -143,7 +151,11 @@ const MapComponent = ({ center, markers = [], zoom = 13, showRoute = false, rout
         );
     } catch (error) {
         console.error("MapComponent render error:", error);
-        return <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F1F5F9', borderRadius: '16px', color: '#64748B' }}>Map initialization failed</div>;
+        return <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F1F5F9', borderRadius: '16px', color: '#64748B', flexDirection: 'column', padding: '20px', textAlign: 'center' }}>
+            <MapPin size={48} color="#94A3B8" style={{ marginBottom: '12px' }} />
+            <div style={{ fontWeight: '700', marginBottom: '4px' }}>Map Unavailable</div>
+            <div style={{ fontSize: '0.85rem' }}>Unable to load map. Please refresh the page.</div>
+        </div>;
     }
 };
 
