@@ -3,16 +3,27 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 're
 import 'leaflet/dist/leaflet.css';
 import { MapPin } from 'lucide-react';
 
-// Use global L from CDN
-const L = window.L;
+// Use global L from CDN - wait for it to load
+const getL = () => {
+    if (typeof window !== 'undefined' && window.L) {
+        return window.L;
+    }
+    console.warn('Leaflet not loaded yet');
+    return null;
+};
 
 // Fix for default marker icon in React Leaflet
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
+if (typeof window !== 'undefined' && window.L) {
+    const L = window.L;
+    if (L.Icon && L.Icon.Default && L.Icon.Default.prototype._getIconUrl) {
+        delete L.Icon.Default.prototype._getIconUrl;
+        L.Icon.Default.mergeOptions({
+            iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+            iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+        });
+    }
+}
 
 function ChangeView({ center, zoom }) {
     const map = useMap();
@@ -36,6 +47,12 @@ function RoutingMachine({ start, end }) {
 
     useEffect(() => {
         if (!map || !start || !end) return;
+
+        const L = getL();
+        if (!L) {
+            console.warn("Leaflet not available for routing");
+            return;
+        }
 
         // Ensure coordinates are numbers
         const startLat = parseFloat(start[0]);
@@ -90,6 +107,9 @@ function RoutingMachine({ start, end }) {
 }
 
 const createCustomIcon = (type) => {
+    const L = getL();
+    if (!L) return null;
+
     let color = '#4F46E5'; // Default blue
     if (type === 'pending') color = '#F59E0B'; // Amber
     if (type === 'active') color = '#10B981'; // Green
