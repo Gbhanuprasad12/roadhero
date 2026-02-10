@@ -5,6 +5,7 @@ import AuthContext from '../../context/AuthContext';
 import api from '../../api';
 import EmptyState from '../../components/EmptyState';
 import { Link } from 'react-router-dom';
+import MapComponent from '../../components/MapComponent';
 
 const Activity = () => {
     const { user } = useContext(AuthContext);
@@ -251,17 +252,22 @@ const Activity = () => {
                     )}
 
                     {!showChat && (
-                        <div className="premium-card" style={{ padding: '24px' }}>
-                            <h4 style={{ fontWeight: '800', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <MapPin size={18} color="var(--primary)" /> Service Area
-                            </h4>
-                            <div style={{ height: '240px', borderRadius: '24px', overflow: 'hidden', background: '#F1F5F9', position: 'relative' }}>
-                                <div className="skeleton" style={{ width: '100%', height: '100%' }}></div>
-                                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
-                                    <MapPin size={32} color="var(--primary)" className="float" />
-                                    <p style={{ marginTop: '12px', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Tracking Status Active</p>
-                                </div>
-                            </div>
+                        <div className="premium-card" style={{ padding: '0', overflow: 'hidden', height: '400px', position: 'relative' }}>
+                            <MapComponent
+                                center={requestLocation ? [requestLocation.lat, requestLocation.lng] : undefined}
+                                markers={[
+                                    requestLocation && { position: [requestLocation.lat, requestLocation.lng], type: 'user', content: 'Your Location' },
+                                    mechanicData?.location && {
+                                        position: [mechanicData.location.coordinates[1], mechanicData.location.coordinates[0]],
+                                        type: 'mechanic',
+                                        content: 'Mechanic'
+                                    }
+                                ].filter(Boolean)}
+                                zoom={14}
+                                showRoute={true}
+                                routeStart={mechanicData?.location ? [mechanicData.location.coordinates[1], mechanicData.location.coordinates[0]] : null}
+                                routeEnd={requestLocation ? [requestLocation.lat, requestLocation.lng] : null}
+                            />
                         </div>
                     )}
                 </div>

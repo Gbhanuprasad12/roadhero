@@ -2,6 +2,10 @@ import React, { useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+// Fix: Leaflet Routing Machine relies on window.L
+if (typeof window !== 'undefined') {
+    window.L = L;
+}
 import 'leaflet-routing-machine';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 
@@ -44,6 +48,11 @@ function RoutingMachine({ start, end }) {
 
         if (isNaN(startLat) || isNaN(startLng) || isNaN(endLat) || isNaN(endLng)) {
             console.error("Invalid coordinates for routing", { start, end });
+            return;
+        }
+
+        if (!L.Routing) {
+            console.warn("Leaflet Routing Machine not loaded");
             return;
         }
 
