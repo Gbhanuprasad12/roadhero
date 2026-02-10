@@ -141,6 +141,10 @@ const MapComponent = ({ center, markers = [], zoom = 13, showRoute = false, rout
         !isNaN(m.position[1])
     );
 
+    // Check if Leaflet is available
+    const L = getL();
+    const isLeafletReady = !!L;
+
     try {
         return (
             <MapContainer
@@ -155,16 +159,20 @@ const MapComponent = ({ center, markers = [], zoom = 13, showRoute = false, rout
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
-                {safeMarkers.map((marker, idx) => (
-                    <Marker key={idx} position={marker.position} icon={createCustomIcon(marker.type)}>
-                        <Popup>
-                            <div style={{ padding: '4px' }}>
-                                {marker.content}
-                            </div>
-                        </Popup>
-                    </Marker>
-                ))}
-                {showRoute && routeStart && routeEnd && (
+                {isLeafletReady && safeMarkers.map((marker, idx) => {
+                    const icon = createCustomIcon(marker.type);
+                    if (!icon) return null;
+                    return (
+                        <Marker key={idx} position={marker.position} icon={icon}>
+                            <Popup>
+                                <div style={{ padding: '4px' }}>
+                                    {marker.content}
+                                </div>
+                            </Popup>
+                        </Marker>
+                    );
+                })}
+                {isLeafletReady && showRoute && routeStart && routeEnd && (
                     <RoutingMachine start={routeStart} end={routeEnd} />
                 )}
             </MapContainer>
