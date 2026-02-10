@@ -87,18 +87,23 @@ export const MechanicProvider = ({ children }) => {
     };
 
     const saveLocationPermanently = async (lat, lng) => {
+        console.log("saveLocationPermanently called with:", lat, lng);
         try {
             if (isNaN(lat) || isNaN(lng)) {
+                console.error("Invalid coordinates:", lat, lng);
                 addToast("Invalid coordinates", "error");
                 return;
             }
-            await api.patch(`/mechanics/${user?._id}/location`, {
+            console.log("Sending location update to API...");
+            const response = await api.patch(`/mechanics/${user?._id}/location`, {
                 latitude: lat, longitude: lng
             });
+            console.log("Location update response:", response.data);
             setLocation({ lat, lng });
             fetchAddress(lat, lng);
             addToast("Location saved!");
         } catch (error) {
+            console.error("Location save error:", error);
             addToast("Failed to save location", "error");
         }
     };
