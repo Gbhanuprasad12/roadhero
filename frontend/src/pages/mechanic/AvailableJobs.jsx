@@ -104,26 +104,37 @@ const AvailableJobs = () => {
                         const serviceImage = req.serviceType === 'Towing' ? '/towing.png' : '/repair.png';
 
                         return (
-                            <div key={req._id} className="premium-card" style={{ padding: '0', overflow: 'hidden' }}>
-                                <div style={{ height: '160px', width: '100%', position: 'relative' }}>
+                            <div key={req._id} className="premium-card" style={{ padding: '0', overflow: 'hidden', minHeight: '340px', display: 'flex', flexDirection: 'column' }}>
+                                <div style={{ height: '140px', width: '100%', position: 'relative', flexShrink: 0 }}>
                                     <img src={serviceImage} alt={req.serviceType} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                    <div style={{ position: 'absolute', top: '12px', right: '12px', background: 'white', padding: '6px 14px', borderRadius: '100px', fontWeight: '900', color: 'var(--secondary)', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', fontSize: '1.1rem' }}>
+                                    <div style={{ position: 'absolute', top: '12px', right: '12px', background: 'white', padding: '6px 14px', borderRadius: '100px', fontWeight: '900', color: 'var(--secondary)', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', fontSize: '1.1rem', zIndex: 10 }}>
                                         ${req.price || 0}
                                     </div>
-                                    <div style={{ position: 'absolute', bottom: '0', left: '0', right: '0', background: 'linear-gradient(transparent, rgba(0,0,0,0.8))', padding: '16px 20px', color: 'white' }}>
-                                        <span style={{ fontSize: '0.65rem', fontWeight: '900', color: 'rgba(255,255,255,0.8)', textTransform: 'uppercase' }}>{req.serviceType}</span>
+                                    <div style={{ position: 'absolute', bottom: '0', left: '0', right: '0', background: 'linear-gradient(transparent, rgba(0,0,0,0.9))', padding: '16px 20px', color: 'white' }}>
+                                        <span style={{ fontSize: '0.65rem', fontWeight: '900', color: 'rgba(255,255,255,0.8)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{req.serviceType || 'Emergency'}</span>
                                         <h4 style={{ margin: '2px 0 0', fontSize: '1.2rem', fontWeight: '900' }}>{req.driverName || 'Nearby Customer'}</h4>
                                     </div>
                                 </div>
 
-                                <div style={{ padding: '20px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '12px' }}>
+                                <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '12px', fontWeight: '700' }}>
                                         <MapPin size={14} color="var(--primary)" /> {d.toFixed(1)} km away
                                     </div>
-                                    <div style={{ background: 'var(--light-bg)', padding: '12px', borderRadius: '12px', marginBottom: '20px', border: '1px solid #e2e8f0' }}>
-                                        <p style={{ margin: 0, fontSize: '0.85rem', fontStyle: 'italic', color: 'var(--text-primary)' }}>"{req.issue}"</p>
+                                    <div style={{ background: 'var(--light-bg)', padding: '12px', borderRadius: '12px', marginBottom: '16px', border: '1px solid #e2e8f0', flex: 1, maxHeight: '80px', overflowY: 'auto' }}>
+                                        <p style={{ margin: 0, fontSize: '0.85rem', fontStyle: 'italic', color: 'var(--text-primary)', lineHeight: '1.4' }}>
+                                            "{req.issue || 'No details provided'}"
+                                        </p>
                                     </div>
-                                    <button onClick={() => acceptRequest(req._id)} className="btn btn-primary" style={{ width: '100%', fontWeight: '900' }}>Accept Job</button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            acceptRequest(req._id);
+                                        }}
+                                        className="btn btn-primary"
+                                        style={{ width: '100%', fontWeight: '900', padding: '14px', marginTop: 'auto' }}
+                                    >
+                                        Accept Job
+                                    </button>
                                 </div>
                             </div>
                         );
