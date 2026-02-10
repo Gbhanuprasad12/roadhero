@@ -3,7 +3,13 @@ import api from '../api';
 import AuthContext from './AuthContext';
 import { io } from 'socket.io-client';
 
-const socket = io(import.meta.env.PROD ? window.location.origin : 'http://localhost:5000');
+let socket;
+try {
+    socket = io(import.meta.env.PROD ? window.location.origin : 'http://localhost:5000');
+} catch (error) {
+    console.error("Socket initialization error:", error);
+    socket = null;
+}
 const MechanicContext = createContext();
 
 export const MechanicProvider = ({ children }) => {
@@ -99,6 +105,12 @@ export const MechanicProvider = ({ children }) => {
                 latitude: lat, longitude: lng
             });
             console.log("Location update response:", response.data);
+
+            // Update AuthContext user state so it persists
+            updateUser({
+                location: response.data.data.location
+            });
+
             setLocation({ lat, lng });
             fetchAddress(lat, lng);
             addToast("Location saved!");
@@ -158,13 +170,15 @@ export const MechanicProvider = ({ children }) => {
     }, [activeJobs]);
 
     useEffect(() => {
-        if (user?.location?.coordinates && user.location.coordinates[0] !== 0) {
+        if (user?.location?.coordinates && Array.isArray(user.location.coordinates) && user.location.coordinates.length >= 2) {
             const [lng, lat] = user.location.coordinates;
-            setLocation({ lat, lng });
-            setManualLat(lat.toString());
-            setManualLng(lng.toString());
-            setManualLocation(true);
-            fetchAddress(lat, lng);
+            if (lat !== undefined && lng !== undefined && lat !== 0) {
+                setLocation({ lat, lng });
+                setManualLat(lat.toString());
+                setManualLng(lng.toString());
+                setManualLocation(true);
+                fetchAddress(lat, lng);
+            }
         } else if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 (position) => {

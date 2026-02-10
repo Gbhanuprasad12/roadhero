@@ -50,9 +50,11 @@ router.get('/:id', async (req, res) => {
     }
 });
 
+const { protect } = require('../middleware/authMiddleware');
+
 // @desc    Update mechanic location or profile
 // @route   PATCH /api/mechanics/:id/location
-router.patch('/:id/location', async (req, res) => {
+router.patch('/:id/location', protect, async (req, res) => {
     try {
         const { latitude, longitude, photoUrl } = req.body;
 

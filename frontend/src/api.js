@@ -6,4 +6,25 @@ const api = axios.create({
         : 'http://localhost:5000/api',
 });
 
+// Add a request interceptor
+api.interceptors.request.use(
+    (config) => {
+        try {
+            const userInfo = localStorage.getItem('userInfo');
+            if (userInfo) {
+                const parsed = JSON.parse(userInfo);
+                if (parsed && parsed.token) {
+                    config.headers.Authorization = `Bearer ${parsed.token}`;
+                }
+            }
+        } catch (err) {
+            console.error("Auth interceptor error:", err);
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
+
 export default api;

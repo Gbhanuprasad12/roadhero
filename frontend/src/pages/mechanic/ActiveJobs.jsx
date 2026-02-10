@@ -123,7 +123,7 @@ const ActiveJobs = () => {
                                         >
                                             <MessageSquare size={18} />
                                             {newMessagesPerJob[job._id] && (
-                                                <span style={{ position: 'absolute', top: -2, right: -2, background: 'var(--accent)', width: '100%', height: '10px', borderRadius: '50%', border: '2px solid white' }}></span>
+                                                <span style={{ position: 'absolute', top: -4, right: -4, background: 'var(--accent)', width: '12px', height: '12px', borderRadius: '50%', border: '2px solid white' }}></span>
                                             )}
                                         </button>
                                     </div>

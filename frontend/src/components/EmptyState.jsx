@@ -27,7 +27,7 @@ const EmptyState = ({ icon, title, description, action = null }) => {
                 {description}
             </p>
             {action && (
-                <div style={{ mt: '24px' }}>
+                <div style={{ marginTop: '24px' }}>
                     {action}
                 </div>
             )}

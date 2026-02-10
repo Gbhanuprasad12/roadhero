@@ -129,7 +129,7 @@ const Home = () => {
                                 style={{ borderRadius: '16px', background: '#F8FAFC' }}
                             >
                                 <option value="">-- Choose from your Garage --</option>
-                                {vehicles.map(v => (
+                                {Array.isArray(vehicles) && vehicles.map(v => (
                                     <option key={v._id} value={v._id}>{v.make} {v.model} ({v.licensePlate})</option>
                                 ))}
                             </select>
@@ -196,8 +196,8 @@ const Home = () => {
                         <MapComponent
                             center={[location.lat, location.lng]}
                             markers={[
-                                { position: [location.lat, location.lng], type: 'user', content: 'You' },
-                                towDestLat && { position: [parseFloat(towDestLat), parseFloat(towDestLng)], type: 'mechanic', content: "Towing Destination" }
+                                (location?.lat && location?.lng) ? { position: [location.lat, location.lng], type: 'user', content: 'You' } : null,
+                                (towDestLat && towDestLng) ? { position: [parseFloat(towDestLat), parseFloat(towDestLng)], type: 'mechanic', content: "Towing Destination" } : null
                             ].filter(Boolean)}
                             zoom={15}
                             onMapClick={pickingMode !== 'none' ? handleMapClick : null}

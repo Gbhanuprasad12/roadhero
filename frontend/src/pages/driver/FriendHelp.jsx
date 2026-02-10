@@ -240,9 +240,9 @@ const FriendHelp = () => {
                         <MapComponent
                             center={friendLat ? [parseFloat(friendLat), parseFloat(friendLng)] : [location.lat, location.lng]}
                             markers={[
-                                { position: [location.lat, location.lng], type: 'user', content: 'You' },
-                                friendLat && { position: [parseFloat(friendLat), parseFloat(friendLng)], type: 'active', content: "Friend's Location" },
-                                towDestLat && { position: [parseFloat(towDestLat), parseFloat(towDestLng)], type: 'mechanic', content: "Towing Destination" }
+                                (location?.lat && location?.lng) ? { position: [location.lat, location.lng], type: 'user', content: 'You' } : null,
+                                (friendLat && friendLng) ? { position: [parseFloat(friendLat), parseFloat(friendLng)], type: 'active', content: "Friend's Location" } : null,
+                                (towDestLat && towDestLng) ? { position: [parseFloat(towDestLat), parseFloat(towDestLng)], type: 'mechanic', content: "Towing Destination" } : null
                             ].filter(Boolean)}
                             zoom={15}
                             onMapClick={pickingMode !== 'none' ? handleMapClick : null}

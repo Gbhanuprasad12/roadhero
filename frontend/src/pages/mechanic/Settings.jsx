@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { MapPin, User, Bell, Shield, Sliders } from 'lucide-react';
 import { useMechanic } from '../../context/MechanicContext';
+import MapComponent from '../../components/MapComponent';
 
 const Settings = () => {
     const {
         radius,
         setRadius,
+        location,
         address,
         manualLat,
         setManualLat,
@@ -13,10 +15,19 @@ const Settings = () => {
         setManualLng,
         setManualLocation,
         saveLocationPermanently,
-        mechanicInfo
+        mechanicInfo,
+        isPickingLocation,
+        setIsPickingLocation
     } = useMechanic();
 
     const [activeTab, setActiveTab] = useState('service');
+
+    const handleMapClick = (latlng) => {
+        const [lat, lng] = latlng;
+        setManualLat(lat.toFixed(6));
+        setManualLng(lng.toFixed(6));
+        setManualLocation(true);
+    };
 
     return (
         <div className="slide-up">
@@ -64,7 +75,48 @@ const Settings = () => {
                             </div>
 
                             <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: '40px' }}>
-                                <h4 style={{ fontSize: '0.9rem', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '24px', textTransform: 'uppercase' }}>Workshop Location</h4>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                                    <h4 style={{ fontSize: '0.9rem', fontWeight: '900', color: 'var(--text-muted)', margin: 0, textTransform: 'uppercase' }}>Workshop Location</h4>
+                                    <button
+                                        onClick={() => setIsPickingLocation(!isPickingLocation)}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            background: isPickingLocation ? 'var(--primary-light)' : 'transparent',
+                                            color: isPickingLocation ? 'var(--primary)' : 'var(--text-secondary)',
+                                            border: `1px solid ${isPickingLocation ? 'var(--primary)' : '#E2E8F0'}`,
+                                            padding: '8px 16px',
+                                            borderRadius: '100px',
+                                            fontSize: '0.85rem',
+                                            fontWeight: '700',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        <MapPin size={16} /> {isPickingLocation ? 'Close Map' : 'Pick on Map'}
+                                    </button>
+                                </div>
+
+                                {isPickingLocation && (
+                                    <div style={{ height: '300px', marginBottom: '24px', position: 'relative' }}>
+                                        <MapComponent
+                                            center={[
+                                                parseFloat(manualLat) || (location?.lat || 51.505),
+                                                parseFloat(manualLng) || (location?.lng || -0.09)
+                                            ]}
+                                            zoom={15}
+                                            onMapClick={handleMapClick}
+                                            markers={parseFloat(manualLat) && parseFloat(manualLng) ? [{
+                                                position: [parseFloat(manualLat), parseFloat(manualLng)],
+                                                type: 'mechanic',
+                                                content: 'Workshop Location'
+                                            }] : []}
+                                        />
+                                        <div style={{ position: 'absolute', bottom: '12px', left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.7)', color: 'white', padding: '10px 20px', borderRadius: '100px', fontSize: '0.75rem', fontWeight: '600', pointerEvents: 'none', zIndex: 1000 }}>
+                                            Click anywhere on the map to set location
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
                                     <div>

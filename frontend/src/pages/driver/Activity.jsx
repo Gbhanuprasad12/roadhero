@@ -13,6 +13,7 @@ const Activity = () => {
         requestId,
         requestStatus,
         mechanicData,
+        requestLocation,
         eta,
         chats,
         hasNewMessage,
@@ -22,7 +23,7 @@ const Activity = () => {
         addToast,
         loading,
         setLoading
-    } = useDriver();
+    } = useDriver() || {};
 
     const [showChat, setShowChat] = useState(false);
     const [chatMessage, setChatMessage] = useState('');
@@ -55,7 +56,9 @@ const Activity = () => {
         };
         try {
             await api.post('/chats', chatData);
-            socket.emit('send_message', chatData);
+            if (socket) {
+                socket.emit('send_message', chatData);
+            }
             setChatMessage('');
         } catch (err) { addToast("Failed to send message", "error"); }
     };
@@ -144,16 +147,18 @@ const Activity = () => {
                                     <img src={mechanicData.photoUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${mechanicData.name}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                 </div>
                                 <div style={{ flex: 1 }}>
-                                    <h4 style={{ margin: 0, fontSize: '1.4rem', fontWeight: '900' }}>{mechanicData.name}</h4>
+                                    <h4 style={{ margin: 0, fontSize: '1.4rem', fontWeight: '900' }}>{mechanicData.name || 'Your Mechanic'}</h4>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}>
                                         <Star size={18} color="#F59E0B" fill="#F59E0B" />
-                                        <span style={{ fontWeight: '800', fontSize: '1rem' }}>5.0</span>
+                                        <span style={{ fontWeight: '800', fontSize: '1rem' }}>{mechanicData.rating || '5.0'}</span>
                                         <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>• RoadHero Pro Partner</span>
                                     </div>
                                     <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
-                                        <a href={`tel:${mechanicData.phone}`} className="btn-icon">
-                                            <Phone size={20} />
-                                        </a>
+                                        {mechanicData.phone && (
+                                            <a href={`tel:${mechanicData.phone}`} className="btn-icon">
+                                                <Phone size={20} />
+                                            </a>
+                                        )}
                                         <button onClick={() => setShowChat(!showChat)} className="btn btn-primary" style={{ padding: '0 24px', borderRadius: '16px', position: 'relative' }}>
                                             <MessageSquare size={20} /> {showChat ? 'Hide Chat' : 'Chat with Mechanic'}
                                             {hasNewMessage && !showChat && <span style={{ position: 'absolute', top: -4, right: -4, width: '12px', height: '12px', background: 'var(--accent)', borderRadius: '50%', border: '2px solid white' }}></span>}
@@ -254,19 +259,19 @@ const Activity = () => {
                     {!showChat && (
                         <div className="premium-card" style={{ padding: '0', overflow: 'hidden', height: '400px', position: 'relative' }}>
                             <MapComponent
-                                center={requestLocation ? [requestLocation.lat, requestLocation.lng] : undefined}
+                                center={(requestLocation?.lat && requestLocation?.lng) ? [requestLocation.lat, requestLocation.lng] : undefined}
                                 markers={[
-                                    requestLocation && { position: [requestLocation.lat, requestLocation.lng], type: 'user', content: 'Your Location' },
-                                    mechanicData?.location && {
+                                    (requestLocation?.lat && requestLocation?.lng) ? { position: [requestLocation.lat, requestLocation.lng], type: 'user', content: 'Your Location' } : null,
+                                    (mechanicData?.location?.coordinates?.length >= 2) ? {
                                         position: [mechanicData.location.coordinates[1], mechanicData.location.coordinates[0]],
                                         type: 'mechanic',
                                         content: 'Mechanic'
-                                    }
+                                    } : null
                                 ].filter(Boolean)}
                                 zoom={14}
                                 showRoute={true}
-                                routeStart={mechanicData?.location ? [mechanicData.location.coordinates[1], mechanicData.location.coordinates[0]] : null}
-                                routeEnd={requestLocation ? [requestLocation.lat, requestLocation.lng] : null}
+                                routeStart={(mechanicData?.location?.coordinates?.length >= 2) ? [mechanicData.location.coordinates[1], mechanicData.location.coordinates[0]] : null}
+                                routeEnd={(requestLocation?.lat && requestLocation?.lng) ? [requestLocation.lat, requestLocation.lng] : null}
                             />
                         </div>
                     )}

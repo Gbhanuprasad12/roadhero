@@ -3,7 +3,13 @@ import api from '../api';
 import AuthContext from './AuthContext';
 import { io } from 'socket.io-client';
 
-const socket = io(import.meta.env.PROD ? window.location.origin : 'http://localhost:5000');
+let socket;
+try {
+    socket = io(import.meta.env.PROD ? window.location.origin : 'http://localhost:5000');
+} catch (error) {
+    console.error("Socket initialization error:", error);
+    socket = null;
+}
 const DriverContext = createContext();
 
 export const DriverProvider = ({ children }) => {
@@ -15,7 +21,14 @@ export const DriverProvider = ({ children }) => {
     const [mechanicData, setMechanicData] = useState(null);
     const [requestLocation, setRequestLocation] = useState(null);
     const [history, setHistory] = useState([]);
-    const [vehicles, setVehicles] = useState(user?.vehicles || []);
+    const [vehicles, setVehicles] = useState([]);
+
+    // Sync vehicles with user
+    useEffect(() => {
+        if (user?.vehicles) {
+            setVehicles(user.vehicles);
+        }
+    }, [user?.vehicles]);
     const [location, setLocation] = useState({ lat: 51.505, lng: -0.09 });
 
     // UI State
@@ -36,7 +49,9 @@ export const DriverProvider = ({ children }) => {
     const fetchHistory = async () => {
         try {
             const res = await api.get(`/requests/driver/${user?._id}?status=COMPLETED`);
-            setHistory(res.data.data);
+            if (res.data && Array.isArray(res.data.data)) {
+                setHistory(res.data.data);
+            }
         } catch (err) { console.error("History fetch error", err); }
     };
 
@@ -44,14 +59,16 @@ export const DriverProvider = ({ children }) => {
         if (!user?._id) return;
         try {
             const res = await api.get(`/requests/driver/${user._id}`);
-            const recent = res.data.data.find(r => r.status !== 'COMPLETED' && r.status !== 'CANCELLED');
-            if (recent) {
-                setRequestId(recent._id);
-                setRequestStatus(recent.status);
-                if (recent.location && recent.location.coordinates) {
-                    setRequestLocation({ lat: recent.location.coordinates[1], lng: recent.location.coordinates[0] });
+            if (res.data && Array.isArray(res.data.data)) {
+                const recent = res.data.data.find(r => r.status && r.status !== 'COMPLETED' && r.status !== 'CANCELLED');
+                if (recent) {
+                    setRequestId(recent._id);
+                    setRequestStatus(recent.status);
+                    if (recent.location?.coordinates?.length >= 2) {
+                        setRequestLocation({ lat: recent.location.coordinates[1], lng: recent.location.coordinates[0] });
+                    }
+                    if (recent.assignedMechanic) setMechanicData(recent.assignedMechanic);
                 }
-                if (recent.assignedMechanic) setMechanicData(recent.assignedMechanic);
             }
         } catch (err) { console.error("Session check error", err); }
     };
@@ -105,21 +122,25 @@ export const DriverProvider = ({ children }) => {
             interval = setInterval(async () => {
                 try {
                     const reqRes = await api.get(`/requests/${requestId}`);
-                    const requestData = reqRes.data.data;
+                    const requestData = reqRes.data?.data;
+                    if (!requestData) return;
+
                     const newStatus = requestData.status;
 
-                    if (newStatus !== requestStatus) {
+                    if (newStatus && newStatus !== requestStatus) {
                         setRequestStatus(newStatus);
                     }
 
-                    if ((newStatus === 'ACCEPTED' || newStatus === 'PAYMENT_PENDING' || newStatus === 'ARRIVED' || newStatus === 'IN_PROGRESS') && requestData.assignedMechanic) {
+                    if (requestData && (newStatus === 'ACCEPTED' || newStatus === 'PAYMENT_PENDING' || newStatus === 'ARRIVED' || newStatus === 'IN_PROGRESS') && requestData.assignedMechanic) {
                         setMechanicData(requestData.assignedMechanic);
-                        if (newStatus === 'ACCEPTED' && requestData.assignedMechanic.location) {
+                        if (newStatus === 'ACCEPTED' && requestData.assignedMechanic.location?.coordinates?.length >= 2) {
                             const mechLoc = requestData.assignedMechanic.location.coordinates;
                             const dLoc = requestLocation || location;
-                            const distance = calculateDist(dLoc.lat, dLoc.lng, mechLoc[1], mechLoc[0]);
-                            const travelTime = Math.round((distance / 30) * 60 + 2);
-                            setEta(travelTime > 0 ? travelTime : 1);
+                            if (dLoc && mechLoc && mechLoc.length >= 2) {
+                                const distance = calculateDist(dLoc.lat, dLoc.lng, mechLoc[1], mechLoc[0]);
+                                const travelTime = Math.round((distance / 30) * 60 + 2);
+                                setEta(travelTime > 0 ? travelTime : 1);
+                            }
                         }
                     }
                 } catch (err) { console.error("Polling error", err); }
@@ -129,7 +150,7 @@ export const DriverProvider = ({ children }) => {
     }, [requestId, requestStatus, location, requestLocation]);
 
     useEffect(() => {
-        if (requestId) {
+        if (requestId && socket) {
             socket.emit('join_room', requestId);
         }
 
@@ -144,16 +165,26 @@ export const DriverProvider = ({ children }) => {
 
                 if (data.senderRole === 'mechanic') {
                     setHasNewMessage(true);
-                    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3');
-                    audio.volume = 0.2;
-                    audio.play().catch(e => { });
+                    try {
+                        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3');
+                        audio.volume = 0.2;
+                        audio.play().catch(e => { });
+                    } catch (e) {
+                        console.warn("Audio play failed", e);
+                    }
                     addToast(`New message from mechanic!`);
                 }
             }
         };
 
-        socket.on('receive_message', handleNewMessage);
-        return () => socket.off('receive_message', handleNewMessage);
+        if (socket) {
+            socket.on('receive_message', handleNewMessage);
+        }
+        return () => {
+            if (socket) {
+                socket.off('receive_message', handleNewMessage);
+            }
+        };
     }, [requestId]);
 
     const value = {
