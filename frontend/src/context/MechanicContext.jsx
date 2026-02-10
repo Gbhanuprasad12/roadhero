@@ -140,6 +140,21 @@ export const MechanicProvider = ({ children }) => {
         }
     };
 
+    const updateProfile = async (profileData) => {
+        try {
+            const response = await api.patch(`/mechanics/${user?._id}/profile`, profileData);
+            if (response.data.success) {
+                setMechanicInfo(response.data.data);
+                updateUser(response.data.data);
+                addToast("Profile updated successfully!");
+                return true;
+            }
+        } catch (error) {
+            addToast(error.response?.data?.error || "Error updating profile", "error");
+            return false;
+        }
+    };
+
     const openChat = async (reqId) => {
         setActiveChatRequestId(reqId);
 
@@ -275,7 +290,8 @@ export const MechanicProvider = ({ children }) => {
         manualLocation,
         setManualLocation,
         newMessagesPerJob,
-        socket
+        socket,
+        updateProfile
     };
 
     return (

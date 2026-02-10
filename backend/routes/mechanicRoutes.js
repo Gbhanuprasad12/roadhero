@@ -52,11 +52,42 @@ router.get('/:id', async (req, res) => {
 
 const { protect } = require('../middleware/authMiddleware');
 
-// @desc    Update mechanic location or profile
+// @desc    Update mechanic profile
+// @route   PATCH /api/mechanics/:id/profile
+router.patch('/:id/profile', protect, async (req, res) => {
+    try {
+        const { name, email, phone, photoUrl } = req.body;
+        const updateData = {};
+        if (name) updateData.name = name;
+        if (email) updateData.email = email;
+        if (phone) updateData.phone = phone;
+        if (photoUrl !== undefined) updateData.photoUrl = photoUrl;
+
+        const mechanic = await Mechanic.findByIdAndUpdate(
+            req.params.id,
+            updateData,
+            { new: true }
+        ).select('-password');
+
+        if (!mechanic) {
+            return res.status(404).json({ success: false, error: 'Mechanic not found' });
+        }
+
+        res.status(200).json({ success: true, data: mechanic });
+    } catch (error) {
+        console.error(error);
+        if (error.code === 11000) {
+            return res.status(400).json({ success: false, error: 'Email already in use' });
+        }
+        res.status(500).json({ success: false, error: 'Server Error' });
+    }
+});
+
+// @desc    Update mechanic location
 // @route   PATCH /api/mechanics/:id/location
 router.patch('/:id/location', protect, async (req, res) => {
     try {
-        const { latitude, longitude, photoUrl } = req.body;
+        const { latitude, longitude } = req.body;
 
         const updateData = {};
         if (latitude && longitude) {
@@ -65,15 +96,12 @@ router.patch('/:id/location', protect, async (req, res) => {
                 coordinates: [parseFloat(longitude), parseFloat(latitude)]
             };
         }
-        if (photoUrl !== undefined) {
-            updateData.photoUrl = photoUrl;
-        }
 
         const mechanic = await Mechanic.findByIdAndUpdate(
             req.params.id,
             updateData,
             { new: true }
-        );
+        ).select('-password');
 
         if (!mechanic) {
             return res.status(404).json({ success: false, error: 'Mechanic not found' });

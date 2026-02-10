@@ -17,10 +17,35 @@ const Settings = () => {
         saveLocationPermanently,
         mechanicInfo,
         isPickingLocation,
-        setIsPickingLocation
+        setIsPickingLocation,
+        updateProfile
     } = useMechanic();
 
     const [activeTab, setActiveTab] = useState('service');
+    const [isUpdating, setIsUpdating] = useState(false);
+    const [formData, setFormData] = useState({
+        name: mechanicInfo?.name || '',
+        email: mechanicInfo?.email || '',
+        phone: mechanicInfo?.phone || '',
+        photoUrl: mechanicInfo?.photoUrl || ''
+    });
+
+    const handleProfileUpdate = async () => {
+        setIsUpdating(true);
+        const success = await updateProfile(formData);
+        setIsUpdating(false);
+    };
+
+    React.useEffect(() => {
+        if (mechanicInfo) {
+            setFormData({
+                name: mechanicInfo.name || '',
+                email: mechanicInfo.email || '',
+                phone: mechanicInfo.phone || '',
+                photoUrl: mechanicInfo.photoUrl || ''
+            });
+        }
+    }, [mechanicInfo]);
 
     const handleMapClick = (latlng) => {
         const [lat, lng] = latlng;
@@ -156,29 +181,77 @@ const Settings = () => {
                     {activeTab === 'profile' && (
                         <div className="slide-up">
                             <h3 style={{ fontSize: '1.2rem', fontWeight: '900', marginBottom: '32px' }}>Professional Profile</h3>
-                            <div style={{ display: 'flex', gap: '24px', marginBottom: '40px' }}>
-                                <div style={{ width: '100px', height: '100px', borderRadius: '24px', background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', border: '2px solid white', boxShadow: '0 8px 16px rgba(0,0,0,0.05)' }}>
-                                    👨‍🔧
+                            <div style={{ display: 'flex', gap: '32px', marginBottom: '40px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center' }}>
+                                    <div style={{
+                                        width: '120px',
+                                        height: '120px',
+                                        borderRadius: '30px',
+                                        background: '#F1F5F9',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        overflow: 'hidden',
+                                        border: '4px solid white',
+                                        boxShadow: '0 12px 24px rgba(0,0,0,0.1)'
+                                    }}>
+                                        {mechanicInfo?.photoUrl ? (
+                                            <img src={mechanicInfo.photoUrl} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        ) : (
+                                            <span style={{ fontSize: '3rem' }}>👨‍🔧</span>
+                                        )}
+                                    </div>
+                                    <span style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Profile Photo</span>
                                 </div>
-                                <div style={{ flex: 1 }}>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+
+                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                                         <div>
                                             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '8px' }}>FULL NAME</label>
-                                            <input defaultValue={mechanicInfo?.name} readOnly style={{ background: '#F8FAFC' }} />
+                                            <input
+                                                value={formData.name}
+                                                onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                                placeholder="Enter your full name"
+                                            />
                                         </div>
                                         <div>
-                                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '8px' }}>PHONE</label>
-                                            <input defaultValue={mechanicInfo?.phone} readOnly style={{ background: '#F8FAFC' }} />
+                                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '8px' }}>PHONE NUMBER</label>
+                                            <input
+                                                value={formData.phone}
+                                                onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                                                placeholder="Enter phone number"
+                                            />
                                         </div>
                                     </div>
+
                                     <div>
-                                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '8px' }}>EMAIL</label>
-                                        <input defaultValue={mechanicInfo?.email} readOnly style={{ background: '#F8FAFC' }} />
+                                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '8px' }}>EMAIL ADDRESS</label>
+                                        <input
+                                            value={formData.email}
+                                            onChange={e => setFormData({ ...formData, email: e.target.value })}
+                                            placeholder="Enter email address"
+                                        />
                                     </div>
+
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '8px' }}>PROFILE IMAGE URL</label>
+                                        <input
+                                            value={formData.photoUrl}
+                                            onChange={e => setFormData({ ...formData, photoUrl: e.target.value })}
+                                            placeholder="https://example.com/photo.jpg"
+                                        />
+                                        <p style={{ marginTop: '8px', fontSize: '0.7rem', color: 'var(--text-muted)' }}>Paste a direct link to your professional photo.</p>
+                                    </div>
+
+                                    <button
+                                        onClick={handleProfileUpdate}
+                                        disabled={isUpdating}
+                                        className="btn btn-primary"
+                                        style={{ width: '100%', marginTop: '12px', padding: '16px', fontSize: '1rem', background: 'var(--primary)' }}
+                                    >
+                                        {isUpdating ? 'Saving Changes...' : 'Save Profile Changes'}
+                                    </button>
                                 </div>
-                            </div>
-                            <div style={{ padding: '24px', background: '#F0FDFA', borderRadius: '16px', border: '1px solid #CCFBF1' }}>
-                                <p style={{ margin: 0, color: '#0F766E', fontSize: '0.9rem', fontWeight: '600' }}>To update your professional details, please contact RoadHero Pro Support for verification.</p>
                             </div>
                         </div>
                     )}
